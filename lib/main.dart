@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const MyHomePage(
-        title: 'Pokédex',
+        title: 'Pokemons',
       ),
     );
   }
