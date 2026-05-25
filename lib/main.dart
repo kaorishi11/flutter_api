@@ -14,37 +14,28 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Pokédex',
+      title: 'Flutter API',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.deepPurple,
         ),
       ),
-      home: const MyHomePage(
-        title: 'Pokemons',
-      ),
-    );
+      home: const MyHomePage(title: 'Pokemons'),);
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({
-    super.key,
-    required this.title,
-  });
+  const MyHomePage({super.key, required this.title,});
 
   final String title;
 
   @override
-  State<MyHomePage> createState() =>
-      _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState
-    extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> {
 
-  final TextEditingController controller =
-      TextEditingController();
+  final TextEditingController controller = TextEditingController();
 
   bool carregando = false;
   String? erro;
@@ -64,36 +55,21 @@ class _MyHomePageState
     });
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          'https://pokeapi.co/api/v2/pokemon?limit=20',
-        ),
+      final response = await http.get(Uri.parse('https://pokeapi.co/api/v2/pokemon?limit=20',),
       );
 
-      final dados =
-          jsonDecode(response.body);
+      final dados = jsonDecode(response.body);
 
-      final results =
-          dados['results'] as List;
+      final results = dados['results'] as List;
 
       List<Pokemon> lista = [];
 
       for (var item in results) {
-        final detalheResponse =
-            await http.get(
-          Uri.parse(item['url']),
-        );
+        final detalheResponse = await http.get(Uri.parse(item['url']),);
 
-        final detalhe =
-            jsonDecode(
-          detalheResponse.body,
-        );
+        final detalhe = jsonDecode(detalheResponse.body,);
 
-        lista.add(
-          Pokemon.fromJson(
-            detalhe,
-          ),
-        );
+        lista.add(Pokemon.fromJson(detalhe,),);
       }
 
       setState(() {
@@ -101,8 +77,7 @@ class _MyHomePageState
       });
     } catch (e) {
       setState(() {
-        erro =
-            'Sem internet ou erro ao carregar Pokémon.';
+        erro ='Sem internet ou erro ao carregar Pokémon.';
       });
     }
 
@@ -127,36 +102,27 @@ class _MyHomePageState
     });
 
     try {
-      final response =
-          await http.get(
-        Uri.parse(
-          'https://pokeapi.co/api/v2/pokemon/$texto',
-        ),
+      final response = await http.get(Uri.parse('https://pokeapi.co/api/v2/pokemon/$texto',),
       );
 
       if (response.statusCode == 404) {
         setState(() {
-          erro =
-              'Pokémon não encontrado.';
+          erro = 'Pokémon não encontrado.';
           pokemons = [];
         });
         return;
       }
 
-      final dados =
-          jsonDecode(response.body);
+      final dados = jsonDecode(response.body);
 
       setState(() {
         pokemons = [
-          Pokemon.fromJson(
-            dados,
-          ),
+          Pokemon.fromJson(dados,),
         ];
       });
     } catch (e) {
       setState(() {
-        erro =
-            'Sem internet ou erro ao buscar Pokémon.';
+        erro ='Sem internet ou erro ao buscar Pokémon.';
       });
     }
 
@@ -182,83 +148,46 @@ class _MyHomePageState
           children: [
 
             TextField(
-              controller:
-                  controller,
-              decoration:
-                  const InputDecoration(
-                labelText:
-                    'Digite nome ou ID',
-                border:
-                    OutlineInputBorder(),
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Digite nome ou ID',
+                border: OutlineInputBorder(),
               ),
             ),
 
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12,),
 
             ElevatedButton(
-              onPressed:
-                  buscarPokemon,
-              child: const Text(
-                'Buscar',
-              ),
+              onPressed: buscarPokemon,
+              child: const Text('Buscar',),
             ),
 
-            const SizedBox(
-              height: 16,
-            ),
+            const SizedBox(height: 16,),
 
             Expanded(
-              child: carregando
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(),
+              child: carregando ? const Center(
+                      child: CircularProgressIndicator(),
                     )
-                  : erro != null
-                      ? Center(
+                  : erro != null ? Center(
                           child:
                               Text(
                             erro!,
-                            style:
-                                const TextStyle(
-                              fontSize:
-                                  18,
-                            ),
+                            style: const TextStyle(fontSize: 18,),
                           ),
                         )
                       : ListView.builder(
-                          itemCount:
-                              pokemons
-                                  .length,
-                          itemBuilder:
-                              (context,
-                                  index) {
+                          itemCount: pokemons.length,
+                          itemBuilder:(context,index) {
 
-                            final pokemon =
-                                pokemons[
-                                    index];
+                            final pokemon = pokemons[index];
 
                             return ListTile(
-                              leading:
-                                  Image.network(
-                                pokemon
-                                    .urlImage,
-                                width:
-                                    60,
-                                height:
-                                    60,
-                              ),
-                              title:
-                                  Text(
-                                pokemon
+                              leading:Image.network(pokemon.urlImage, height:60,),
+                              title:Text(pokemon
                                     .name
                                     .toUpperCase(),
                               ),
-                              subtitle:
-                                  Text(
-                                'Nº ${pokemon.id}',
-                              ),
+                              subtitle:Text('Nº ${pokemon.id}',),
                             );
                           },
                         ),
