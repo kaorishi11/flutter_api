@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'models/pokemon.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,32 +13,155 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter API',
+      debugShowCheckedModeBanner: false,
+      title: 'Pokédex',
       theme: ThemeData(
-
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+        ),
       ),
-      home: const MyHomePage(title: 'Pokemon API'),
+      home: const MyHomePage(
+        title: 'Pokédex',
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
+  const MyHomePage({
+    super.key,
+    required this.title,
+  });
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MyHomePage> createState() =>
+      _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MyHomePageState
+    extends State<MyHomePage> {
 
-  void _incrementCounter() {
+  final TextEditingController controller =
+      TextEditingController();
+
+  bool carregando = false;
+  String? erro;
+
+  List<Pokemon> pokemons = [];
+
+  @override
+  void initState() {
+    super.initState();
+    carregar20Pokemons();
+  }
+
+  Future<void> carregar20Pokemons() async {
     setState(() {
-      _counter++;
+      carregando = true;
+      erro = null;
+    });
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://pokeapi.co/api/v2/pokemon?limit=20',
+        ),
+      );
+
+      final dados =
+          jsonDecode(response.body);
+
+      final results =
+          dados['results'] as List;
+
+      List<Pokemon> lista = [];
+
+      for (var item in results) {
+        final detalheResponse =
+            await http.get(
+          Uri.parse(item['url']),
+        );
+
+        final detalhe =
+            jsonDecode(
+          detalheResponse.body,
+        );
+
+        lista.add(
+          Pokemon.fromJson(
+            detalhe,
+          ),
+        );
+      }
+
+      setState(() {
+        pokemons = lista;
+      });
+    } catch (e) {
+      setState(() {
+        erro =
+            'Sem internet ou erro ao carregar Pokémon.';
+      });
+    }
+
+    setState(() {
+      carregando = false;
+    });
+  }
+
+  Future<void> buscarPokemon() async {
+    final texto = controller.text
+        .trim()
+        .toLowerCase();
+
+    if (texto.isEmpty) {
+      carregar20Pokemons();
+      return;
+    }
+
+    setState(() {
+      carregando = true;
+      erro = null;
+    });
+
+    try {
+      final response =
+          await http.get(
+        Uri.parse(
+          'https://pokeapi.co/api/v2/pokemon/$texto',
+        ),
+      );
+
+      if (response.statusCode == 404) {
+        setState(() {
+          erro =
+              'Pokémon não encontrado.';
+          pokemons = [];
+        });
+        return;
+      }
+
+      final dados =
+          jsonDecode(response.body);
+
+      setState(() {
+        pokemons = [
+          Pokemon.fromJson(
+            dados,
+          ),
+        ];
+      });
+    } catch (e) {
+      setState(() {
+        erro =
+            'Sem internet ou erro ao buscar Pokémon.';
+      });
+    }
+
+    setState(() {
+      carregando = false;
     });
   }
 
@@ -45,26 +169,102 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor:
+            Theme.of(context)
+                .colorScheme
+                .inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
+      body: Padding(
+        padding:
+            const EdgeInsets.all(16),
         child: Column(
-         
-          mainAxisAlignment: .center,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+
+            TextField(
+              controller:
+                  controller,
+              decoration:
+                  const InputDecoration(
+                labelText:
+                    'Digite nome ou ID',
+                border:
+                    OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(
+              height: 12,
+            ),
+
+            ElevatedButton(
+              onPressed:
+                  buscarPokemon,
+              child: const Text(
+                'Buscar',
+              ),
+            ),
+
+            const SizedBox(
+              height: 16,
+            ),
+
+            Expanded(
+              child: carregando
+                  ? const Center(
+                      child:
+                          CircularProgressIndicator(),
+                    )
+                  : erro != null
+                      ? Center(
+                          child:
+                              Text(
+                            erro!,
+                            style:
+                                const TextStyle(
+                              fontSize:
+                                  18,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount:
+                              pokemons
+                                  .length,
+                          itemBuilder:
+                              (context,
+                                  index) {
+
+                            final pokemon =
+                                pokemons[
+                                    index];
+
+                            return ListTile(
+                              leading:
+                                  Image.network(
+                                pokemon
+                                    .urlImage,
+                                width:
+                                    60,
+                                height:
+                                    60,
+                              ),
+                              title:
+                                  Text(
+                                pokemon
+                                    .name
+                                    .toUpperCase(),
+                              ),
+                              subtitle:
+                                  Text(
+                                'Nº ${pokemon.id}',
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
